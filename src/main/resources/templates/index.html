@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Hello WebSocket</title>
+	<link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+	<script src="../static/js/jquery-3.2.1.min.js" th:src="@{/js/jquery-3.2.1.min.js}"></script>
+	<script src="../static/js/sockjs.min.js" th:src="@{/js/sockjs.min.js}"></script>
+	<script src="../static/js/stomp.min.js" th:src="@{/js/stomp.min.js}"></script>
+</head>
+
+<script type="text/javascript">
+
+	//set stomp client url
+	var stompClient = null;
+	//set websocket endpoint 
+	var socketEndpoint = "/websocket";
+	//set subscribe topic
+	var topic = "topic";
+	//set server endpoint
+	var serverEndpoint = "/test";
+
+	var connect = function () {
+		//new SockJS	
+		var socket = new SockJS(socketEndpoint);
+		stompClient = Stomp.over(socket);
+		//stompClient connect
+		stompClient.connect({}, function (frame) {
+			console.log("StompClient connect success.");
+			subscribeSocket();
+		});
+	}
+
+	/** callback function **/
+	var subscribeSocket = function () {
+		console.log("topic: " + topic);
+		stompClient.subscribe(topic, function (responseBody) {
+			var receiveMessage = JSON.parse(responseBody.body);
+			$("#information").append("<tr><td>" + receiveMessage.content + "</td></tr>");
+		});
+	}
+
+	function disconnect() {
+		stompClient.disconnect(function () {
+			console.log("StompClient connect closed.");
+		});
+	}
+
+	function sendMessageNoParameter() {
+		var sendContent = $("#content").val();
+		var message = '{"destination": "' + topic + '", "content": "' + sendContent + '"}';
+		stompClient.send(serverEndpoint, {}, message);
+	}
+
+	function cleanMessage() {
+		$("#information").empty();
+	}
+	connect();
+
+</script>
+
+<body>
+	<div id="main-content" class="container" style="margin-top: 10px;">
+
+		<div class="row">
+			<div class="form-group">
+				<label for="content">送出訊息：</label> <input type="text" id="content" class="form-control"
+					placeholder="消息內容">
+			</div>
+			<button class="btn btn-info" onclick="sendMessageNoParameter();" type="button">發送</button>
+			<button class="btn btn-info" onclick="cleanMessage();" type="button">清除</button>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<h5 class="page-header" style="font-weight: bold">收到訊息：</h5>
+				<table class="table table-striped">
+					<tbody id="information"></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
